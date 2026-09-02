@@ -1,45 +1,55 @@
----
-# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/<user>/<name>
-name: template
-# description will be included in the image's metadata
-description: This is my personal OS image.
+name: gaming-os
+description: "Sistema operativo para juegos basado en Bazzite"
+version: latest
 
-# the base image to build on top of (FROM) and the version tag to use
-base-image: ghcr.io/ublue-os/silverblue-main
-image-version: latest # You can pin to a specific version of Fedora as well
+base:
+  image: ghcr.io/ublue-os/bazzite
+  variant: stable
 
-# module configuration, executed in order
-# you can include multiple instances of the same module
 modules:
+  - type: packages
+    packages:
+      - steam
+      - lutris
+      - heroic-games-launcher
+      - goverlay
+      - mangohud
+      - gamemode
+      - wine
+      - winetricks
+      - vulkan-tools
+      - mesa-utils
+      - gamemode
+      - kernel-fsync
+
+  - type: systemd
+    enable:
+      - gamemode.service
+      - system76-scheduler.service
+
+  - type: script
+    scripts:
+      - /usr/share/ublue-os/scripts/setup-gamemode.sh
+
   - type: files
     files:
-      - source: system
-        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+      - source: configs/gamemode.ini
+        destination: /etc/gamemode.ini
+      - source: configs/sysctl.conf
+        destination: /etc/sysctl.d/99-gaming.conf
 
-  - type: dnf
-    repos:
-      copr:
-        - atim/starship
-    install:
-      packages:
-        - micro
-        - starship
-    remove:
-      packages:
-        # example: removing firefox (in favor of the flatpak)
-        # "firefox" is the main package, "firefox-langpacks" is a dependency
-        - firefox
-        - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+  - type: ujust
+    commands:
+      - name: install-proton-ge
+        description: "Instala Proton-GE"
+        script: |
+          mkdir -p ~/.steam/root/compatibilitytools.d
+          cd ~/.steam/root/compatibilitytools.d
+          wget https://github.com/GloriousEggroll/proton-ge-custom/releases/latest/download/GE-Proton.tar.gz
+          tar -xzf GE-Proton.tar.gz
+          rm GE-Proton.tar.gz
 
-  - type: default-flatpaks
-    configurations:
-      - notify: true # Send notification after install/uninstall is finished (true/false)
-        scope: system
-        # If no repo information is specified, Flathub will be used by default
-        install: # system flatpaks we want all users to have and not remove
-          - org.mozilla.firefox
-          - org.gnome.Loupe
-      - scope: user # Also add Flathub user repo, but no user packages
-
-  - type: signing # this sets up the proper policy & signing files for signed images to work fully
+  - type: environment
+    variables:
+      GAMEMODERUN: 1
+      MANGOHUD: 1
