@@ -19,17 +19,12 @@ modules:
       - winetricks
       - vulkan-tools
       - mesa-utils
-      - gamemode
       - kernel-fsync
 
   - type: systemd
     enable:
       - gamemode.service
       - system76-scheduler.service
-
-  - type: script
-    scripts:
-      - /usr/share/ublue-os/scripts/setup-gamemode.sh
 
   - type: files
     files:
