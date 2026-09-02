@@ -1,1 +1,39 @@
+name: Build Gaming OS
 
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 0'  # Construye cada domingo a las 00:00
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image with BlueBuild
+        uses: blue-build/build@v1
+        with:
+          recipe: recipe.yml
+          signing-key: ${{ secrets.SIGNING_SECRET }}
+
+      - name: Generate ISO
+        uses: blue-build/iso@v1
+        with:
+          image: ghcr.io/${{ github.repository }}:latest
+          output: gaming-os.iso
+
+      - name: Upload ISO as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaming-os-iso
+          path: gaming-os.iso
+          retention-days: 30
